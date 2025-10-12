@@ -4,6 +4,23 @@ import { User } from '../models/user';
 import { createUserSchema } from '../models/user';
 import router from '../routes/users';
 
+/*
+Users endpoints:
+
+POST /api/v1/auth/sign-up (creates a user account)  
+
+POST /api/v1/auth/login (login to existing account)  
+
+GET /api/v1/users (admin) (lists all the users)  
+
+PUT /api/v1/users/:id (admin: update user ) 
+
+DELETE /api/v1/users/:id (admin: deletes a user account)  
+
+*/
+
+
+
 // get all users from the database
 export const getUsers = async (req: Request, res: Response) => {
   try {
