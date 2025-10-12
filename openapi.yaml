@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: ATU Lab Equipment Loaner API
+  version: 0.1.0
+  description: REST API for managing lab equipment, users, and bookings.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local dev
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Equipment
+  - name: Bookings
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterUser' }
+      responses:
+        '201': { description: Registered (returns minimal user) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Login' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { token: { type: string } }
+        '401': { description: Invalid credentials }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List all users (admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '403': { description: Forbidden }
+
+  /users/{id}:
+    put:
+      tags: [Users]
+      summary: Update user (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200': { description: Updated }
+        '400': { $ref: '#/components/responses/ValidationOrIdError' }
+        '404': { description: Not found }
+        '403': { description: Forbidden }
+    delete:
+      tags: [Users]
+      summary: Delete a user (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Deleted }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found }
+        '403': { description: Forbidden }
+
+  /equipment:
+    get:
+      tags: [Equipment]
+      summary: List equipment (filters supported)
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [available, reserved, out] }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Equipment' }
+    post:
+      tags: [Equipment]
+      summary: Create equipment (staff/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EquipmentCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Equipment' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '403': { description: Forbidden }
+
+  /equipment/{id}:
+    get:
+      tags: [Equipment]
+      summary: Get equipment by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Equipment' }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found }
+    patch:
+      tags: [Equipment]
+      summary: Update equipment (staff/admin)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EquipmentUpdate' }
+      responses:
+        '200': { description: Updated }
+        '400': { $ref: '#/components/responses/ValidationOrIdError' }
+        '404': { description: Not found }
+        '403': { description: Forbidden }
+    delete:
+      tags: [Equipment]
+      summary: Delete equipment (admin)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      responses:
+        '204': { description: Deleted }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found }
+        '403': { description: Forbidden }
+
+  /bookings:
+    get:
+      tags: [Bookings]
+      summary: List bookings (own for students; all for staff/admin)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, denied, checked_out, returned] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Booking' }
+        '401': { description: Unauthorized }
+    post:
+      tags: [Bookings]
+      summary: Create a booking (student)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingCreate' }
+      responses:
+        '201':
+          description: Created (status=pending)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Booking' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { description: Unauthorized }
+
+  /bookings/{id}/approve:
+    patch:
+      tags: [Bookings]
+      summary: Approve a pending booking (staff)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      responses:
+        '200': { description: Approved }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found or bad transition }
+        '403': { description: Forbidden }
+
+  /bookings/{id}/deny:
+    patch:
+      tags: [Bookings]
+      summary: Deny a pending booking (staff)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      responses:
+        '200': { description: Denied }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found or bad transition }
+        '403': { description: Forbidden }
+
+  /bookings/{id}/check-out:
+    patch:
+      tags: [Bookings]
+      summary: Mark as checked out (staff)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      responses:
+        '200': { description: Checked out }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found or bad transition }
+        '403': { description: Forbidden }
+
+  /bookings/{id}/check-in:
+    patch:
+      tags: [Bookings]
+      summary: Mark as returned (staff)
+      parameters:
+        - in: path; name: id; required: true; schema: { type: string }
+      responses:
+        '200': { description: Returned }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found or bad transition }
+        '403': { description: Forbidden }
+
+components:
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            invalid:
+              value: { message: "Validation error", issues: [ { path: ["name"], message: "Required" } ] }
+    IdError:
+      description: Invalid ObjectId
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples: { invalid: { value: { message: "Invalid ID" } } }
+    ValidationOrIdError:
+      description: Invalid ObjectId or body validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: array, items: { type: string } }
+              message: { type: string }
+
+    RegisterUser:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 50 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+
+    Login:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [student, staff, admin] }
+
+    UserUpdate:
+      type: object
+      properties:
+        role: { type: string, enum: [student, staff, admin] }
+        phone: { type: string }
+
+    EquipmentCreate:
+      type: object
+      required: [name, category, serial, condition, location]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        category: { type: string, minLength: 2, maxLength: 50 }
+        serial: { type: string, minLength: 1, maxLength: 100 }
+        condition: { type: string, enum: [New, Good, Fair, Poor] }
+        status: { type: string, enum: [available, reserved, out], default: available }
+        location: { type: string, minLength: 2, maxLength: 100 }
+
+    Equipment:
+      allOf:
+        - $ref: '#/components/schemas/EquipmentCreate'
+        - type: object
+          properties:
+            _id: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+
+    EquipmentUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        category: { type: string }
+        serial: { type: string }
+        condition: { type: string, enum: [New, Good, Fair, Poor] }
+        status: { type: string, enum: [available, reserved, out] }
+        location: { type: string }
+
+    BookingCreate:
+      type: object
+      required: [equipmentId, startDate, endDate]
+      properties:
+        equipmentId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        notes: { type: string, maxLength: 500 }
+
+    Booking:
+      type: object
+      properties:
+        _id: { type: string }
+        userId: { type: string }
+        equipmentId: { type: string }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        status: { type: string, enum: [pending, approved, denied, checked_out, returned] }
+        notes: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
