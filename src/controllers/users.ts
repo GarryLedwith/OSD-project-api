@@ -3,80 +3,75 @@ import { collections } from '../database';
 import { User } from '../models/user';
 import { createUserSchema } from '../models/user';
 import router from '../routes/users';
+import { ObjectId } from 'mongodb';
 
 /*
 Users endpoints:
 
-POST /api/v1/auth/sign-up (creates a user account)  
+GET /api/v1/users (admin: lists all the users)  
 
-POST /api/v1/auth/login (login to existing account)  
+GET /api/v1/users/:id (admin: gets an individual user)  
 
-GET /api/v1/users (admin) (lists all the users)  
+POST /api/v1/users (admin: creates a new user account)
 
-PUT /api/v1/users/:id (admin: update user ) 
+PUT /api/v1/users/:id (admin: update individual user- full update ) 
 
-DELETE /api/v1/users/:id (admin: deletes a user account)  
+PATCH /api/v1/users/:id (admin: update individual user – partial update) 
+
+DELETE /api/v1/users/:id (admin: deletes a user account)   
 
 */
 
 
-
-// get all users from the database
+// get all users from the database 
+// GET /api/v1/users (admin: lists all the users)  <--- This is the endpoint
 export const getUsers = async (req: Request, res: Response) => {
+  // how can I use createUserSchema to validate the data from the database?
   try {
-
-   const users = (await collections.users?.find({}).toArray()) as unknown as User[];
-
+    const users = (await collections.users?.find({}).toArray()) as unknown as User[];
+    res.status(200).send(users);
   } catch (error) {
-   res.status(500).send("oppss");
+    if (error instanceof Error) {
+      console.log(`issue with getting users ${error.message}`);
+    } else {
+      console.log(`error with ${error}`);
+    }
+    res.status(500).send(`Unable to get users`);
   }
 };
 
 // get a single  user by ID from the database
+// GET /api/v1/users/:id (admin: gets an individual user)  <--- This is the endpoint
 export const getUserById = (req: Request, res: Response) => {
    let id:string = req.params.id;
  res.json({"message": `get a user ${id} received`})
 };
 
-// create a new user in the database
+
+// POST /api/v1/users (admin: creates a new user account)
 export const createUser = async (req: Request, res: Response) => {
-  //router.post('/', validate(createUserSchema), createUser);
   try {
-      console.log(req.body); //for now still log the data
+    const newUser: User = req.body;
 
-      const { name, phonenumber, email, dob } = req.body; // Destructure the incoming data
+    const result = await collections.users?.insertOne(newUser); 
 
-      const newUser: User = { 
-        name: name, 
-        phonenumber: phonenumber, 
-        email: email, 
-        dob: new Date(dob), 
-        dateJoined: new Date(), 
-        lastUpdated: new Date(),
-        role: req.body.role 
-      };
-
-   const result = await collections.users?.insertOne(newUser)
-
-   if (result) {
-    res.status(201).location(`${result.insertedId}`).json({ message: `Created a new user with id ${result.insertedId}` })
-    }
-    else {
-     res.status(500).send("Failed to create a new user.");
+    if (result) {
+      res.status(201).send(result);
+    } else {
+      res.status(500).send(`Unable to create user`);
     }
   } catch (error) {
-      if (error instanceof Error)
-    {
-      console.log(`issue with inserting ${error.message}`);
+    if (error instanceof Error) {
+      console.log(`issue with creating user ${error.message}`);
+    } else {
+      console.log(`error with ${error}`);
     }
-    else{
-      console.log(`error with ${error}`)
-    }
-    res.status(400).send(`Unable to create user`);
+    res.status(500).send(`Unable to create user`);
   }
 };
 
 // update a user in the database
+// PUT /api/v1/users/:id (admin: update individual user- full update ) 
 export const updateUser = (req: Request, res: Response) => {
     
     try {
@@ -94,11 +89,30 @@ export const updateUser = (req: Request, res: Response) => {
   }
 };
 
-
+// update a user in the database (partial update)
+// PATCH /api/v1/users/:id (admin: update individual user – partial update) 
+export const patchUser = (req: Request, res: Response) => {
+    try {
+      console.log(req.body); 
+      res.json({"message": `patch user ${req.params.id} with data from the post message`})
+    } catch (error) {
+      if (error instanceof Error)
+    {
+      console.log(`issue with patching ${error.message}`);
+    }
+    else{
+      console.log(`error with ${error}`)
+    }
+    res.status(400).send(`Unable to patch user`);
+  }
+};
 
 // delete a user from the database
-export const deleteUser = (req: Request, res: Response) => {
-
+// DELETE /api/v1/users/:id (admin: deletes a user account)
+export const deleteUser = async (req: Request, res: Response) => {
+  const id:string = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await collections.users?.deleteOne(query);
 
     try {
       console.log(req.body); 
