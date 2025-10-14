@@ -1,21 +1,76 @@
-@port = 3000
+@port = 3003
 @endpoint = http://localhost:{{port}}/api/v1/users
 
-###
-### POST Request for a user
+
+### GET Request for all users
 ## Expected result is ........
-# @name postAUser
+# @name getAllUsers
+GET {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+
+### GET Request for a user by ID
+## Expected result is ........
+# @name getAUserById
+GET {{endpoint}}/123 HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+### POST Request to create a new user
+## Expected result is ........
+# @name createAUser
 POST {{endpoint}} HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 
 {
   "name": "Garry Ledwith",
-  "phonenumber": "0879865432",
   "email": "garryledwith@gmail.com",
   "dob": "1990-01-01",
   "role": "student",
   "dateJoined": "2023-10-01",
   "lastUpdated": "2023-10-01"
 }
+
+
+### PUT Request to update a user by ID
+## Expected result is ........
+# @name updateAUserById
+PUT {{endpoint}}/123 HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "David Ledwith",
+  "email": "davidledwith@gmail.com",
+  "dob": "1998-01-01",
+  "role": "staff",
+  "dateJoined": "2023-10-01",
+  "lastUpdated": "2023-10-01"
+}
+
+### PATCH Request to update a user by ID
+## Expected result is ........
+# @name patchAUserById
+PATCH {{endpoint}}/123 HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "garryledwith@gmail.com",
+  "dob": "1990-01-01",
+  "role": "student",
+  "dateJoined": "2023-10-01",
+  "lastUpdated": "2023-10-01"
+}
+
+### DELETE Request to delete a user by ID
+## Expected result is ........
+# @name deleteAUserById
+DELETE {{endpoint}}/123 HTTP/1.1
+Content-Type: application/json
+Accept: application/json  
+
+
 
