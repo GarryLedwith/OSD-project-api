@@ -8,7 +8,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-const app: Application = express();
+export const app: Application = express();
 
 initDb(); // Initialize database connection
 
@@ -31,9 +31,6 @@ app.get("/ping", async (_req : Request, res: Response) => {
  });
 });
 
-app.listen(PORT, () => {
-    console.log("Server is running on port", PORT);
-});
 
 
 
