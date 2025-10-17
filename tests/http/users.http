@@ -1,6 +1,72 @@
 @port = 3003
 @endpoint = http://localhost:{{port}}/api/v1/users
+@userIdOne = 68ecd747125a1e4176cfee4a
+@userIdTwo = 68f1cc2e10b7eaa57a610986
 
+### POST Request to create a new student user
+## Expected result is ........
+# @name createAStudentUserSuccess
+POST {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Garry Ledwith",
+  "phonenumber": "0872281234",
+  "email": "garryledwith@student.atu.ie",
+  "dob": "1990-01-01",
+  "role": "student",
+  "dateJoined": "2023-10-01",
+  "lastUpdated": "2023-10-01"
+}
+### POST Request to create a new staff user
+## Expected result is ........
+# @name createAStaffUserSuccess
+POST {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Mary Quinn",
+  "email": "maryQuinn@staff.atu.ie",
+  "dob": "1975-01-01",
+  "role": "staff",
+  "dateJoined": "2024-10-01",
+  "lastUpdated": "2024-10-01  "
+}
+
+### POST Request to create a new admin user
+## Expected result is ........
+# @name createAnAdminUserSuccess
+POST {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "John Keenan",
+  "phonenumber": "0871234567",
+  "email": "johnkeenan@admin.atu.ie",
+  "dob": "1970-01-01",
+  "role": "admin",
+  "dateJoined": "2023-10-01",
+  "lastUpdated": "2023-10-01"
+}
+
+### POST Request to create a new user with missing fields
+## Expected result is ........
+# @name createAUserMissingFields
+POST {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "John Keenan",
+  "email": "johnkeenan@admin.atu.ie",
+  "dob": "1970-01-01",
+  "role": "admin",
+  "dateJoined": "2023-10-01",
+  "lastUpdated": "2023-10-01"
+}
 
 ### GET Request for all users
 ## Expected result is ........
@@ -9,43 +75,61 @@ GET {{endpoint}} HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 
-
-### GET Request for a user by ID
+### GET request for a user with valid id 
 ## Expected result is ........
-# @name getAUserById
+# @name getAUserValidId
+GET {{endpoint}}/{{userIdOne}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+### GET Request for a user by invalid ID
+## Expected result is ........
+# @name getAUserByInvalidId
 GET {{endpoint}}/123 HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 
-### POST Request to create a new user
+### GET Request for users by studentrole
 ## Expected result is ........
-# @name createAUser
-POST {{endpoint}} HTTP/1.1
+# @name getUsersByStudentRole
+GET {{endpoint}}/role/student HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 
-{
-  "name": "Garry Ledwith",
-  "email": "garryledwith@gmail.com",
-  "dob": "1990-01-01",
-  "role": "student",
-  "dateJoined": "2023-10-01",
-  "lastUpdated": "2023-10-01"
-}
+### GET Request for users by staff role
+## Expected result is ........
+# @name getUsersByStaffRole
+GET {{endpoint}}/role/staff HTTP/1.1
+Content-Type: application/json
+Accept: application/json
 
+### GET Request for users by admin role
+## Expected result is ........
+# @name getUsersByAdminRole
+GET {{endpoint}}/role/admin HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+### GET Request for users by invalid role
+## Expected result is ........
+# @name getUsersByInvalidRole
+GET {{endpoint}}/role/manager HTTP/1.1
+Content-Type: application/json
+Accept: application/json  
 
 ### PUT Request to update a user by ID
 ## Expected result is ........
 # @name updateAUserById
-PUT {{endpoint}}/123 HTTP/1.1
+PUT {{endpoint}}/{{userIdOne}} HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 
 {
-  "name": "David Ledwith",
-  "email": "davidledwith@gmail.com",
-  "dob": "1998-01-01",
-  "role": "staff",
+  "name": "Mary Ledwith",
+  "phonenumber": "0872281234",
+  "email": "maryledwith@student.atu.ie",
+  "dob": "1990-01-01",
+  "role": "student",
   "dateJoined": "2023-10-01",
   "lastUpdated": "2023-10-01"
 }
@@ -65,12 +149,16 @@ Accept: application/json
   "lastUpdated": "2023-10-01"
 }
 
+### DELETE Request to delete a user by valid ID
+## Expected result is ........
+# @name deleteAUserByValidId
+DELETE {{endpoint}}/{{userIdOne}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
 ### DELETE Request to delete a user by ID
 ## Expected result is ........
-# @name deleteAUserById
+# @name deleteAUserByInvalidId
 DELETE {{endpoint}}/123 HTTP/1.1
 Content-Type: application/json
 Accept: application/json  
-
-
-
