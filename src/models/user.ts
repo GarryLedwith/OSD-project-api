@@ -100,15 +100,24 @@ Implementation Details:
 - Each field is validated using the previously defined reusable schemas (PersonName, IrishPhoneNumber, RoleBasedEmail).
 - Date fields (dob, dateJoined, lastUpdated) are coerced to Date objects to ensure proper date handling.
 - Optional fields (dateJoined, lastUpdated) are marked as optional, allowing them to be omitted during user creation.
+REFACTOR: 
+- refine() method is used to implement custom validation logic that checks if the email format matches the specified role.
+ - If the email does not conform to the role-based format, a validation error is returned with a descriptive message.
 */
 export const createUserSchema = z.object({
      name: PersonName,
      phonenumber: IrishPhoneNumber,
-     email: RoleBasedEmail,
+     email: z.string().email(), // basic email format validation,
      dob: z.coerce.date(), // date should be provided in ISO format (e.g., "YYYY-MM-DD")
      role: z.enum(['student', 'staff', 'admin']),
      dateJoined: z.coerce.date().optional(),
      lastUpdated: z.coerce.date().optional()
+}).refine((data) => {
+    // Validate email based on role
+    const emailValidation = RoleBasedEmail.safeParse({ role: data.role, email: data.email }); // safeParse to avoid throwing errors
+    return emailValidation.success;
+}, {
+    message: "Email does not match the required format for the specified role"
 });
 
 // UPDATE: partial schema for user updates
