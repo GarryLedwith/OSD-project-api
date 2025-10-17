@@ -25,10 +25,8 @@ export async function initDb(): Promise<void> {
      db = client.db(dbName);
      const usersCollection: Collection = db.collection('users')
      const equipmentCollection: Collection = db.collection('equipment')
-     const bookingsCollection: Collection = db.collection('bookings')
      collections.users = usersCollection;
      collections.equipment = equipmentCollection;
-     collections.bookings = bookingsCollection;
      console.log(`Successfully connected to database: ${db.databaseName} and collections: ${collections}`);
    }
    catch (error) {
