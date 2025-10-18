@@ -4,16 +4,7 @@ import {app} from "../../src/index";
 // Variable to store the created user ID for use across tests
 let createdUserId: string;
 
-// Get all users endpoint test
-describe("Getting all users", () => {
- test("Testing the get all users", async () => {
-  const res = await request(app).get("/api/v1/users");
-  expect(res.statusCode).toEqual(200);
-  expect(res.body).toBeInstanceOf(Array);
-   });
-});
-
-// Create user endpoint test - run this first to create a test user
+// Create user endpoint test 
 describe("Creating a new user", () => {
  test("Testing the create user", async () => {
    const newUser = {
@@ -25,11 +16,20 @@ describe("Creating a new user", () => {
    };
   const res = await request(app).post("/api/v1/users").send(newUser);
   expect(res.statusCode).toEqual(201);
-  expect(res.body).toHaveProperty("insertedId");
+  expect(res.body).toHaveProperty("insertedId"); // check that the response has insertedId key
 
   // Store the created user ID for subsequent tests
   createdUserId = res.body.insertedId;
-  expect(createdUserId).toBeDefined();
+  expect(createdUserId).toBeDefined(); // check that the variable is defined 
+   });
+});
+
+// Get all users endpoint test
+describe("Getting all users", () => {
+ test("Testing the get all users", async () => {
+  const res = await request(app).get("/api/v1/users");
+  expect(res.statusCode).toEqual(200);
+  expect(res.body).toBeInstanceOf(Array); // check that the response is an array
    });
 });
 
