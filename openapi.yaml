@@ -1,55 +1,27 @@
 openapi: 3.0.3
 info:
   title: ATU Lab Equipment Loaner API
-  version: 0.1.0
-  description: REST API for managing lab equipment, users, and bookings.
+  version: 1.0.0
+  description: >
+    REST API for managing users, equipment, and embedded booking history.
+    Bookings are stored as embedded subdocuments within each equipment item.
 servers:
   - url: http://localhost:3000/api/v1
-    description: Local dev
+    description: Local development
 
 tags:
-  - name: Auth
   - name: Users
   - name: Equipment
-  - name: Bookings
+  - name: Bookings (Embedded)
 
 paths:
-  /auth/register:
-    post:
-      tags: [Auth]
-      summary: Register a new user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/RegisterUser' }
-      responses:
-        '201': { description: Registered (returns minimal user) }
-        '400': { $ref: '#/components/responses/ValidationError' }
-
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Login a user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/Login' }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties: { token: { type: string } }
-        '401': { description: Invalid credentials }
-
+  ############################
+  # Users
+  ############################
   /users:
     get:
       tags: [Users]
-      summary: List all users (admin)
+      summary: List users
       responses:
         '200':
           description: OK
@@ -58,45 +30,86 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/User' }
-        '403': { description: Forbidden }
+    post:
+      tags: [Users]
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationError' }
 
   /users/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string, description: MongoDB ObjectId }
+    get:
+      tags: [Users]
+      summary: Get user by id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Not found }
     put:
       tags: [Users]
-      summary: Update user (admin)
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+      summary: Replace user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/ValidationOrIdError' }
+        '404': { description: Not found }
+    patch:
+      tags: [Users]
+      summary: Update user (partial)
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/UserUpdate' }
       responses:
-        '200': { description: Updated }
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
         '400': { $ref: '#/components/responses/ValidationOrIdError' }
         '404': { description: Not found }
-        '403': { description: Forbidden }
     delete:
       tags: [Users]
-      summary: Delete a user (admin)
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+      summary: Delete user
       responses:
         '204': { description: Deleted }
         '400': { $ref: '#/components/responses/IdError' }
         '404': { description: Not found }
-        '403': { description: Forbidden }
 
+  ############################
+  # Equipment
+  ############################
   /equipment:
     get:
       tags: [Equipment]
-      summary: List equipment (filters supported)
+      summary: List equipment (with optional filters)
       parameters:
         - in: query
           name: category
@@ -106,7 +119,13 @@ paths:
           schema: { type: string, enum: [available, reserved, out] }
         - in: query
           name: q
-          schema: { type: string }
+          schema: { type: string, description: Text search on name/serial }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
       responses:
         '200':
           description: OK
@@ -117,7 +136,7 @@ paths:
                 items: { $ref: '#/components/schemas/Equipment' }
     post:
       tags: [Equipment]
-      summary: Create equipment (staff/admin)
+      summary: Create equipment
       requestBody:
         required: true
         content:
@@ -130,17 +149,16 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Equipment' }
         '400': { $ref: '#/components/responses/ValidationError' }
-        '403': { description: Forbidden }
 
   /equipment/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string, description: MongoDB ObjectId }
     get:
       tags: [Equipment]
-      summary: Get equipment by id
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+      summary: Get equipment by id (includes embedded bookings)
       responses:
         '200':
           description: OK
@@ -151,38 +169,40 @@ paths:
         '404': { description: Not found }
     patch:
       tags: [Equipment]
-      summary: Update equipment (staff/admin)
-      parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+      summary: Update equipment (partial)
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/EquipmentUpdate' }
       responses:
-        '200': { description: Updated }
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Equipment' }
         '400': { $ref: '#/components/responses/ValidationOrIdError' }
         '404': { description: Not found }
-        '403': { description: Forbidden }
     delete:
       tags: [Equipment]
-      summary: Delete equipment (admin)
-      parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+      summary: Delete equipment
       responses:
         '204': { description: Deleted }
         '400': { $ref: '#/components/responses/IdError' }
         '404': { description: Not found }
-        '403': { description: Forbidden }
 
-  /bookings:
+  ############################
+  # Embedded Bookings under Equipment
+  ############################
+  /equipment/{id}/bookings:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string, description: Equipment ObjectId }
     get:
-      tags: [Bookings]
-      summary: List bookings (own for students; all for staff/admin)
-      parameters:
-        - in: query
-          name: status
-          schema: { type: string, enum: [pending, approved, denied, checked_out, returned] }
+      tags: [Bookings (Embedded)]
+      summary: List embedded bookings for an equipment item
       responses:
         '200':
           description: OK
@@ -190,75 +210,104 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Booking' }
-        '401': { description: Unauthorized }
+                items: { $ref: '#/components/schemas/EmbeddedBooking' }
+        '400': { $ref: '#/components/responses/IdError' }
+        '404': { description: Equipment not found }
     post:
-      tags: [Bookings]
-      summary: Create a booking (student)
+      tags: [Bookings (Embedded)]
+      summary: Add a booking to an equipment item
+      description: Adds a new embedded booking after checking for overlapping date ranges.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/BookingCreate' }
+            schema: { $ref: '#/components/schemas/BookingCreateEmbedded' }
       responses:
         '201':
-          description: Created (status=pending)
+          description: Created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Booking' }
-        '400': { $ref: '#/components/responses/ValidationError' }
-        '401': { description: Unauthorized }
+              schema: { $ref: '#/components/schemas/EmbeddedBooking' }
+        '400': { $ref: '#/components/responses/ValidationOrIdError' }
+        '404': { description: Equipment not found }
+        '409': { description: Overlapping booking exists }
 
-  /bookings/{id}/approve:
+  /equipment/{id}/bookings/{bookingId}/approve:
     patch:
-      tags: [Bookings]
-      summary: Approve a pending booking (staff)
+      tags: [Bookings (Embedded)]
+      summary: Approve a pending embedded booking
       parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
       responses:
-        '200': { description: Approved }
+        '200': { description: Approved, content: { application/json: { schema: { $ref: '#/components/schemas/EmbeddedBooking' } } } }
         '400': { $ref: '#/components/responses/IdError' }
-        '404': { description: Not found or bad transition }
-        '403': { description: Forbidden }
+        '404': { description: Booking not found or not pending }
 
-  /bookings/{id}/deny:
+  /equipment/{id}/bookings/{bookingId}/deny:
     patch:
-      tags: [Bookings]
-      summary: Deny a pending booking (staff)
+      tags: [Bookings (Embedded)]
+      summary: Deny a pending embedded booking
       parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
       responses:
-        '200': { description: Denied }
+        '200': { description: Denied, content: { application/json: { schema: { $ref: '#/components/schemas/EmbeddedBooking' } } } }
         '400': { $ref: '#/components/responses/IdError' }
-        '404': { description: Not found or bad transition }
-        '403': { description: Forbidden }
+        '404': { description: Booking not found or not pending }
 
-  /bookings/{id}/check-out:
+  /equipment/{id}/bookings/{bookingId}/check-out:
     patch:
-      tags: [Bookings]
-      summary: Mark as checked out (staff)
+      tags: [Bookings (Embedded)]
+      summary: Mark an approved booking as checked out
       parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
       responses:
-        '200': { description: Checked out }
+        '200': { description: Checked out, content: { application/json: { schema: { $ref: '#/components/schemas/EmbeddedBooking' } } } }
         '400': { $ref: '#/components/responses/IdError' }
-        '404': { description: Not found or bad transition }
-        '403': { description: Forbidden }
+        '404': { description: Booking not found or not approved }
 
-  /bookings/{id}/check-in:
+  /equipment/{id}/bookings/{bookingId}/check-in:
     patch:
-      tags: [Bookings]
-      summary: Mark as returned (staff)
+      tags: [Bookings (Embedded)]
+      summary: Mark a checked-out booking as returned
       parameters:
-        - in: path; name: id; required: true; schema: { type: string }
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: bookingId
+          required: true
+          schema: { type: string }
       responses:
-        '200': { description: Returned }
+        '200': { description: Returned, content: { application/json: { schema: { $ref: '#/components/schemas/EmbeddedBooking' } } } }
         '400': { $ref: '#/components/responses/IdError' }
-        '404': { description: Not found or bad transition }
-        '403': { description: Forbidden }
+        '404': { description: Booking not found or not checked_out }
 
 components:
-
+  ############################
+  # Reusable responses
+  ############################
   responses:
     ValidationError:
       description: Validation error
@@ -267,19 +316,28 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
           examples:
             invalid:
-              value: { message: "Validation error", issues: [ { path: ["name"], message: "Required" } ] }
+              value:
+                message: Validation error
+                issues:
+                  - path: [ "name" ]
+                    message: Required
     IdError:
       description: Invalid ObjectId
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
-          examples: { invalid: { value: { message: "Invalid ID" } } }
+          examples:
+            invalid:
+              value: { message: Invalid ID }
     ValidationOrIdError:
       description: Invalid ObjectId or body validation failed
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
 
+  ############################
+  # Schemas
+  ############################
   schemas:
     Error:
       type: object
@@ -290,41 +348,71 @@ components:
           items:
             type: object
             properties:
-              path: { type: array, items: { type: string } }
+              path:
+                type: array
+                items: { type: string }
               message: { type: string }
 
-    RegisterUser:
-      type: object
-      required: [name, email, password]
-      properties:
-        name: { type: string, minLength: 2, maxLength: 50 }
-        email: { type: string, format: email }
-        password: { type: string, minLength: 8, maxLength: 128 }
-
-    Login:
-      type: object
-      required: [email, password]
-      properties:
-        email: { type: string, format: email }
-        password: { type: string, minLength: 8, maxLength: 128 }
-
+    # Users
     User:
       type: object
       properties:
         _id: { type: string }
         name: { type: string }
         email: { type: string, format: email }
+        phone: { type: string }
+        dob: { type: string, format: date }
         role: { type: string, enum: [student, staff, admin] }
+        dateJoined: { type: string, format: date-time }
+        lastUpdated: { type: string, format: date-time }
+
+    UserCreate:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 50 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        phone: { type: string }
+        dob: { type: string, format: date }
+        role: { type: string, enum: [student, staff, admin], description: "Defaults to student" }
 
     UserUpdate:
       type: object
       properties:
-        role: { type: string, enum: [student, staff, admin] }
+        name: { type: string, minLength: 2, maxLength: 50 }
+        email: { type: string, format: email }
         phone: { type: string }
+        dob: { type: string, format: date }
+        role: { type: string, enum: [student, staff, admin] }
+        password: { type: string, minLength: 8, maxLength: 128 }
+
+    # Equipment & Embedded Bookings
+    EmbeddedBooking:
+      type: object
+      properties:
+        bookingId: { type: string, description: "UUID or generated string id" }
+        userId: { type: string, description: "MongoDB ObjectId (string) referencing users._id" }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        status:
+          type: string
+          enum: [pending, approved, denied, checked_out, returned]
+          default: pending
+        notes: { type: string, maxLength: 500 }
+      required: [ bookingId, userId, startDate, endDate, status ]
+
+    BookingCreateEmbedded:
+      type: object
+      properties:
+        userId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        notes: { type: string, maxLength: 500 }
+      required: [ userId, startDate, endDate ]
 
     EquipmentCreate:
       type: object
-      required: [name, category, serial, condition, location]
       properties:
         name: { type: string, minLength: 2, maxLength: 100 }
         category: { type: string, minLength: 2, maxLength: 50 }
@@ -332,15 +420,11 @@ components:
         condition: { type: string, enum: [New, Good, Fair, Poor] }
         status: { type: string, enum: [available, reserved, out], default: available }
         location: { type: string, minLength: 2, maxLength: 100 }
-
-    Equipment:
-      allOf:
-        - $ref: '#/components/schemas/EquipmentCreate'
-        - type: object
-          properties:
-            _id: { type: string }
-            createdAt: { type: string, format: date-time }
-            updatedAt: { type: string, format: date-time }
+        bookings:
+          type: array
+          items: { $ref: '#/components/schemas/EmbeddedBooking' }
+          default: []
+      required: [ name, category, serial, condition, location ]
 
     EquipmentUpdate:
       type: object
@@ -351,25 +435,15 @@ components:
         condition: { type: string, enum: [New, Good, Fair, Poor] }
         status: { type: string, enum: [available, reserved, out] }
         location: { type: string }
+        bookings:
+          type: array
+          items: { $ref: '#/components/schemas/EmbeddedBooking' }
 
-    BookingCreate:
-      type: object
-      required: [equipmentId, startDate, endDate]
-      properties:
-        equipmentId: { type: string }
-        startDate: { type: string, format: date }
-        endDate: { type: string, format: date }
-        notes: { type: string, maxLength: 500 }
-
-    Booking:
-      type: object
-      properties:
-        _id: { type: string }
-        userId: { type: string }
-        equipmentId: { type: string }
-        startDate: { type: string, format: date-time }
-        endDate: { type: string, format: date-time }
-        status: { type: string, enum: [pending, approved, denied, checked_out, returned] }
-        notes: { type: string }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+    Equipment:
+      allOf:
+        - $ref: '#/components/schemas/EquipmentCreate'
+        - type: object
+          properties:
+            _id: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
