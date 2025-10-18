@@ -16,6 +16,8 @@ app.use(morgan("tiny"));
 
 app.use(express.json());
 
+
+
 // register routes for users 
 app.use('/api/v1/users', userRoutes)
 
