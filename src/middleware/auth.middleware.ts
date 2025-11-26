@@ -8,3 +8,8 @@ export const authenticateKey = async (req : Request, res : Response, next : Next
  }
    next();
 };
+
+// Part 3: Additional authentication middleware will be added 
+
+
+
