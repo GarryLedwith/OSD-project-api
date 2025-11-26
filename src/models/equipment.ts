@@ -3,27 +3,63 @@ import { z } from "zod";
 
 // Equipment model interface
 export interface Equipment {
-     _id?: ObjectId; // MongoDB unique identifier
-     name: string; // equipment name
-     condition: 'new' | 'good' | 'fair' | 'poor'; // equipment condition
-     serialNumber: string; // unique serial number for the equipment
-     checkoutDate: Date; // date when the equipment was checked out
-     status: 'available' | 'checked-out' | 'reserved' | 'maintenance'; // current status of the equipment
-     location: string; // physical location of the equipment
-     dateAdded?: Date; // date the equipment was added to the inventory
-     lastUpdated?: Date; // date of last update
+     _id: ObjectId,
+     name: String,                   
+     category: String,
+     description: String,
+     status: String,
+     location: String,
+     model: String,
+
+  bookings: [                     // embedded bookings array
+    {
+      _id: ObjectId,
+      userId: ObjectId,           // ID of the user who made the booking
+      startDate: Date,
+      endDate: Date,
+      status: String,             // default 'pending'
+      createdAt: Date,
+      updatedAt: Date
+    }
+  ],
+  createdAt?: Date; 
+  updatedAt?: Date; 
 }
 
-// CREATE: strict schema for equipment creation
+// =========== Zod schemas for validation =============
+
+// Equipment status options
+export const equipmentStatusEnum = z.enum(['available', 'unavailable', 'maintenance']);
+
+// Booking status options
+export const bookingStatusEnum = z.enum(['pending', 'approved', 'denied', 'checked_out', 'returned']);
+
+// ISO date string schema
+export const isoDateString = z.string().refine((dateStr) => {
+     return !isNaN(Date.parse(dateStr));
+}, {
+     message: "Invalid ISO date string",
+});
+
+// Booking schema
+export const bookingSchema = z.object({
+     userId: z.string().refine((id) => ObjectId.isValid(id), { message: "Invalid user ID" }),
+     startDate: isoDateString,
+     endDate: isoDateString,
+     status: bookingStatusEnum.default('pending'),
+});
+
+// Equipment with embedded bookings schema
 export const equipmentSchema = z.object({
      name: z.string().min(1),
-     condition: z.enum(['new', 'good', 'fair', 'poor']),
-     serialNumber: z.string().min(1),
-     checkoutDate: z.coerce.date(), // date should be provided in ISO format (e.g., "YYYY-MM-DD")
-     status: z.enum(['available', 'checked-out', 'reserved', 'maintenance']),
-     location: z.string().min(1),
-     dateAdded: z.coerce.date().optional(),
-     lastUpdated: z.coerce.date().optional()
+     category: z.string().min(1),
+     description: z.string().optional(),
+     status: equipmentStatusEnum.default('available'),
+     location: z.string().optional(),
+     model: z.string().optional(),
+     bookings: z.array(bookingSchema).optional(),
+     dateAdded: isoDateString.optional(),
+     lastUpdated: isoDateString.optional(),
 });
 
 // UPDATE: partial schema for equipment updates
