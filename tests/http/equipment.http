@@ -1,0 +1,72 @@
+@port = 3000
+@endpoint = http://localhost:{{port}}/api/v1/equipment
+
+@testId = 69194cfa268c2a13893948b6
+
+### POST Request to create new equipment
+## Expected result is ........
+# @name createNewEquipmentSuccess
+POST {{endpoint}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Canon EOS R6",
+  "category": "Camera",
+  "description": "Mirrorless full-frame camera",
+  "status": "available",
+  "location": "Lab A:  Camera Cabinet",
+  "assetTag": "CAM-102",
+  "manufacturer": "Canon",
+  "model": "EOS R6"
+}
+
+### GET Request for all equipment
+## Expected result is ........
+# @name getAllEquipment
+GET {{endpoint}} HTTP/1.1
+
+### GET Request for equipment filtered by category
+## Expected result is ........
+# @name getEquipmentByCategory
+GET {{endpoint}}?category=Camera HTTP/1.1
+
+### GET Request for equipment filtered by status
+## Expected result is ........
+# @name getEquipmentByStatus
+GET {{endpoint}}?status=available HTTP/1.1
+
+### PUT Request to update equipment status
+## Expected result is ..........
+# @name updateEquipmentStatus
+PUT {{endpoint}}/{{testId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "in-use"
+}
+### DELETE Request to remove equipment
+## Expected result is ..........
+# @name deleteEquipment
+DELETE {{endpoint}}/{{testId}} HTTP/1.1
+
+### POST Request to add booking for equipment
+## Expected result is ..........
+# @name addEquipmentBooking
+POST {{endpoint}}/{{testId}}/bookings HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": "user-123",
+  "startDate": "2023-10-01",
+  "endDate": "2023-10-05"
+}
+### GET Request to retrieve bookings by equipment id
+## Expected result is ..........
+# @name getEquipmentBookings
+GET {{endpoint}}/{{testId}}/bookings HTTP/1.1
+
+
+
