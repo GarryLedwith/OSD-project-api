@@ -3,30 +3,19 @@ import { collections } from '../database';
 import { User } from '../models/user';
 import { ObjectId } from 'mongodb';
 
-/*
-Users endpoints:
 
-POST /api/v1/users (admin: creates a new user account)
-
-GET /api/v1/users (admin: lists all the users)  
-
-GET /api/v1/users/:id (admin: gets an individual user)  
-
-GET /api/v1/users/role/:role (admin: gets users by role)
-
-PUT /api/v1/users/:id (admin: update individual user- full update ) 
-
-PATCH /api/v1/users/:id (admin: update individual user – partial update) 
-
-DELETE /api/v1/users/:id (admin: deletes a user account)   
-
-*/
-
-// Define allowed user roles
-const ALLOWED_ROLES = new Set<User['role']>(['admin', 'staff', 'student']); 
+ // Define allowed user roles
+ // change to enum: 
+ enum UserRole {
+   Admin = 'admin',
+   Staff = 'staff',
+   Student = 'student',
+ }
+ 
+ 
 
 // create a new user in the database
-// POST /api/v1/users (admin: creates a new user account)
+// POST /api/v1/users 
 export const createUser = async (req: Request, res: Response) => {
   try {
     const newUser: User = {
@@ -52,8 +41,8 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-// get all users from the database 
-// GET /api/v1/users (admin: lists all the users)  
+// get all users from the database
+// GET /api/v1/users 
 export const getUsers = async (req: Request, res: Response) => {
   try {
     // fetch all users from the database
@@ -73,7 +62,7 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 // get a single user by ID from the database
-// GET /api/v1/users/:id (admin: gets an individual user)  
+// GET /api/v1/users/:id  
 export const getUserById = async (req: Request, res: Response) => {
    try {
       // Extract user ID from request parameters
@@ -105,20 +94,27 @@ export const getUserById = async (req: Request, res: Response) => {
 export const getUsersByRole = async (req: Request, res: Response) => {
   try {
     // Extract role from request parameters
-    const roleParam = req.params.role as User['role'];
+    const roleParam = req.params.role;
+
+    // Type guard to ensure roleParam is a valid UserRole
+    const isUserRole = (r: any): r is UserRole => {
+      return Object.values(UserRole).includes(r as UserRole);
+    };
 
     // Validate the role
-    if (!ALLOWED_ROLES.has(roleParam)) {
+    if (!isUserRole(roleParam)) {
       return res.status(400).send(`Invalid role: ${roleParam}`);
     }
 
+    const role = roleParam as UserRole;
+
     // Query the database for users with the specified role
-    const usersCursor = collections.users?.find({ role: roleParam });
+    const usersCursor = collections.users?.find({ role: role });
     const usersByRole = usersCursor ? (await usersCursor.toArray()) as unknown as User[] : [];
 
     // handle case where no users are found
     if (usersByRole.length === 0) {
-      return res.status(404).send(`No users found with role: ${roleParam}`);
+      return res.status(404).send(`No users found with role: ${role}`);
     } else {
       return res.status(200).send(usersByRole);
     }
@@ -135,7 +131,7 @@ export const getUsersByRole = async (req: Request, res: Response) => {
 
 
 // update a user in the database
-// PUT /api/v1/users/:id (admin: update individual user- full update )
+// PUT /api/v1/users/:id 
 export const updateUser = async (req: Request, res: Response) => {
     try {
       // Extract user ID from request parameters
@@ -180,11 +176,38 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 // update a user in the database (partial update)
-// PATCH /api/v1/users/:id (admin: update individual user – partial update) 
-export const patchUser = (req: Request, res: Response) => {
+// PATCH /api/v1/users/:id (partial update)
+export const patchUser = async (req: Request, res: Response) => {
     try {
-      
-      // TODO: Implement partial update logic here
+      // Extract user ID from request parameters
+      const id: string = req.params.id;
+
+      // validate ObjectId
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send(`Invalid user ID: ${id}`);
+      }
+
+      // Get only the fields that were sent in the request
+      const updates = {
+        ...req.body,
+        lastUpdated: new Date(),
+      };
+
+      // update the user in the database with partial data
+      const result = await collections.users?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updates }
+      );
+
+      // return response based on the update result
+      if (result && result.modifiedCount > 0) {
+        return res.status(200).json({ message: `User with ID ${id} updated successfully` });
+      } else if (result && result.matchedCount > 0) {
+        return res.status(200).json({ message: `User with ID ${id} was already up to date` });
+      } else {
+        return res.status(404).json({ message: `User with ID ${id} not found` });
+      }
+
     } catch (error) {
       if (error instanceof Error)
     {
@@ -198,7 +221,7 @@ export const patchUser = (req: Request, res: Response) => {
 };
 
 // delete a user from the database
-// DELETE /api/v1/users/:id (admin: deletes a user account)
+// DELETE /api/v1/users/:id (deletes a user account)
 export const deleteUser = async (req: Request, res: Response) => {
     try {
 
