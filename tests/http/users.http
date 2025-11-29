@@ -16,6 +16,7 @@ Accept: application/json
   "email": "keithquinn@student.atu.ie",
   "dob": "2000-01-01",
   "role": "student",
+  "password": "password123",
   "dateJoined": "2023-10-01",
   "lastUpdated": "2023-10-01"
 }
