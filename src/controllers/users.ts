@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { collections } from '../database';
 import { User } from '../models/user';
 import { ObjectId } from 'mongodb';
+import * as argon2 from 'argon2';
 
 
  // Define allowed user roles
@@ -24,6 +25,15 @@ export const createUser = async (req: Request, res: Response) => {
       lastUpdated: new Date(),
     }
 
+    // check if user exists with the same email
+    const existingUser = await collections.users?.findOne({ email: newUser.email });
+    if (existingUser) {
+      return  res.status(409).send(`User with email ${newUser.email} already exists`);
+    }
+
+    // Hash the password before storing
+    newUser.hashedPassword = await argon2.hash(newUser.password!);
+
     const result = await collections.users?.insertOne(newUser); 
 
     if (result) {
@@ -45,8 +55,8 @@ export const createUser = async (req: Request, res: Response) => {
 // GET /api/v1/users 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    // fetch all users from the database
-    const users = (await collections.users?.find({}).toArray()) as unknown as User[];
+    // fetch all users from the database (excluding hashed passwords)
+    const users = (await collections.users?.find({}).project({ hashedPassword: 0 }).toArray()) as unknown as User[];
 
     // return the list of users
     return res.status(200).send(users);
@@ -73,8 +83,8 @@ export const getUserById = async (req: Request, res: Response) => {
         return res.status(400).send(`Invalid user ID: ${id}`);
       }
 
-      // fetch the user by id from the database
-      const user = await collections.users?.findOne({ _id: new ObjectId(id) }) as unknown as User;
+      // fetch the user by id from the database (excluding hashed password) TODO!: verify projection works as intended
+      const user = await collections.users?.findOne({ _id: new ObjectId(id) }, { projection: { hashedPassword: 0 } }) as unknown as User;
 
       // return the user data
      return  res.status(200).send(user);
