@@ -1,0 +1,15 @@
+# @name login
+POST http://localhost:3000/api/v1/auth
+content-type: application/json
+
+{
+  "email": "keithquinn@student.atu.ie",
+  "password": "password123"
+}
+###
+
+@accessToken = {{login.response.body.accessToken}}
+
+DELETE http://localhost:3000/api/v1/users/66f1428fd79bf0c5ae9988
+content-type: application/json
+Authorization: Bearer {{accessToken}}
