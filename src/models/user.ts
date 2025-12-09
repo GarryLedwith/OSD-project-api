@@ -1,6 +1,12 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 
+enum role {
+    student = 'student',
+    staff = 'staff',
+    admin = 'admin'
+}
+
 // User model interface
 export interface User {
      _id?: ObjectId; 
@@ -8,7 +14,7 @@ export interface User {
      phone: string;  
      email: string; 
      dob: Date; 
-     role: 'student' | 'staff' | 'admin'; 
+     role: role; 
      dateJoined?: Date; 
      lastUpdated?: Date; 
 
