@@ -11,18 +11,21 @@ export const validJWTProvided = async (
 ) => {
   const authHeader = req.headers?.authorization;
 
+  // Check for Bearer token in Authorization header
   if (!authHeader || !authHeader.startsWith('Bearer')) {
     console.log('no header ' + authHeader);
     res.status(401).send();
     return;
   }
 
+  // Extract token from header
   const token = authHeader.split(' ')[1];
   if (!token) {
     res.status(401).send();
     return;
   }
 
+  // Verify the token
   const secret = process.env.JWTSECRET || 'not very secret';
 
   try {
@@ -35,4 +38,17 @@ export const validJWTProvided = async (
   }
 };
 
+// Middleware to check if the user has admin role
+export const isAdmin = async (
+  req: Request,   
+  res: Response,
+  next: NextFunction
+) => {
+  const role = res.locals?.payload?.role;
 
+  if (role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'not an admin' });
+  }
+}; 
