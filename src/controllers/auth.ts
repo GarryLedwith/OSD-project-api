@@ -37,7 +37,7 @@ export const handleLogin = async (req: Request, res: Response) => {
 
     if (isPasswordValid) {
       const token = createAccessToken(user);
-      res.status(201).json({ accessToken: token, user: { email: user.email, name: user.name } });
+      res.status(201).json({ accessToken: token, user: { email: user.email, name: user.name, role: user.role } }); // return role as well (missing role was causing issues on frontend, but now fixed)
       return;
     } else {
       res.status(401).json({ message: 'Invalid email or password!' });
