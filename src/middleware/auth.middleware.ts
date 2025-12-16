@@ -38,14 +38,17 @@ export const validJWTProvided = async (
   }
 };
 
-// Middleware to check if the user has admin role
+// Middleware to check if the user has admin role (using role from JWT payload)
 export const isAdmin = async (
   req: Request,   
   res: Response,
   next: NextFunction
 ) => {
-  const role = res.locals?.payload?.role;
+  const role = res.locals?.payload?.role; // Get role from JWT payload  and assign it to role variable
 
+  console.log('User role: ' + role);
+
+  // Check if role is 'admin' (if so, proceed to next middleware/handler, else return 403)
   if (role === 'admin') {
     next();
   } else {
