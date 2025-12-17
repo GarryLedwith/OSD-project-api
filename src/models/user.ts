@@ -1,6 +1,12 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 
+enum role {
+    student = 'student',
+    staff = 'staff',
+    admin = 'admin'
+}
+
 // User model interface
 export interface User {
      _id?: ObjectId; 
@@ -8,9 +14,12 @@ export interface User {
      phone: string;  
      email: string; 
      dob: Date; 
-     role: 'student' | 'staff' | 'admin'; 
+     role: role; 
      dateJoined?: Date; 
      lastUpdated?: Date; 
+
+     password?: string; // Plaintext password for creation/update only
+     hashedPassword?: string; // For authentication purposes
 }
 
 // ===============================================
@@ -65,6 +74,9 @@ export const createUserSchema = z.object({
      email: z.string().email(), 
      dob: z.coerce.date(), 
      role: z.enum(['student', 'staff', 'admin']),
+     password: z.string()
+       .min(8, { message: "Password must be at least 8 characters long" })
+       .max(64, { message: "Password cannot exceed 64 characters" }),
      dateJoined: z.coerce.date().optional(),
      lastUpdated: z.coerce.date().optional()
 }).refine((data) => {

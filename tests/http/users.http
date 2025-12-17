@@ -11,11 +11,12 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "name": "Keith Quinn",
+  "name": "Jim Smith",
   "phone": "0872281234",
-  "email": "keithquinn@student.atu.ie",
+  "email": "jimsmith@student.atu.ie",
   "dob": "2000-01-01",
   "role": "student",
+  "password": "password123",
   "dateJoined": "2023-10-01",
   "lastUpdated": "2023-10-01"
 }

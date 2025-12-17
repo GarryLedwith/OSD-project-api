@@ -5,6 +5,7 @@ import morgan from "morgan";
 import cors from "cors";
 import dotenv from 'dotenv';
 import { initDb } from "./database";
+import { authRouter } from "./routes/auth";
 
 
 dotenv.config();
@@ -23,6 +24,9 @@ app.use(express.json());
 
 // register routes for users 
 app.use('/api/v1/users', userRoutes)
+
+// register routes for authentication 
+app.use('/api/v1/auth', authRouter);
 
 // register routes for equipment
 app.use('/api/v1/equipment', equipmentRoutes);
