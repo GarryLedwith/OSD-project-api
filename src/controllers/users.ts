@@ -76,7 +76,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
    try {
       // Extract user ID from request parameters
-      const id:string = req.params.id; 
+      const id = String(req.params.id);
 
       // validate ObjectId
       if (!ObjectId.isValid(id)) {
@@ -145,7 +145,7 @@ export const getUsersByRole = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
     try {
       // Extract user ID from request parameters
-      const id:string = req.params.id;
+      const id = String(req.params.id);
 
       // validate ObjectId
       if (!ObjectId.isValid(id)) {
@@ -190,7 +190,7 @@ export const updateUser = async (req: Request, res: Response) => {
 export const patchUser = async (req: Request, res: Response) => {
     try {
       // Extract user ID from request parameters
-      const id: string = req.params.id;
+      const id = String(req.params.id);
 
       // validate ObjectId
       if (!ObjectId.isValid(id)) {

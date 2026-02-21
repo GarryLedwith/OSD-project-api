@@ -68,7 +68,7 @@ export const addEquipment = async (req: Request, res: Response): Promise<void> =
 // GET /api/v1/equipment/:id 
 export const getEquipmentById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id: string = req.params.id;
+    const id = String(req.params.id);
 
     // Validate ObjectId
     if (!ObjectId.isValid(id)) {
@@ -97,7 +97,7 @@ export const getEquipmentById = async (req: Request, res: Response): Promise<voi
 // PATCH /api/v1/equipment/:id 
 export const updateEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id: string = req.params.id;
+    const id = String(req.params.id);
     const updates = req.body;
 
     // Validate ObjectId
@@ -131,7 +131,7 @@ export const updateEquipment = async (req: Request, res: Response): Promise<void
 // DELETE /api/v1/equipment/:id 
 export const deleteEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id: string = req.params.id;
+    const id = String(req.params.id);
 
     // Validate ObjectId
     if (!ObjectId.isValid(id)) {
@@ -176,8 +176,8 @@ async function updateBookingStatus(
   actionName: string
 ): Promise<void> {
   try {
-    const equipmentId: string = req.params.id;
-    const bookingId: string = req.params.bookingId;
+    const equipmentId = String(req.params.id);
+    const bookingId = String(req.params.bookingId);
 
     // Validate ObjectId
     if (!ObjectId.isValid(equipmentId) || !ObjectId.isValid(bookingId)) {
@@ -229,7 +229,7 @@ async function updateBookingStatus(
 // Create a new booking request
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const equipmentId: string = req.params.id;
+    const equipmentId = String(req.params.id);
     const bookingData = req.body;
     const { startDate, endDate } = bookingData;
 
@@ -282,7 +282,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 // Get all bookings for a specific equipment item
 export async function getBookings(req: Request, res: Response): Promise<void> {
   try {
-    const equipmentId: string = req.params.id;
+    const equipmentId = String(req.params.id);
     const { status, userId } = req.query;
 
     // Validate ObjectId
