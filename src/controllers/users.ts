@@ -235,7 +235,7 @@ export const patchUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
     try {
 
-      const id:string = req.params.id; // Extract user ID from request parameters
+      const id = String(req.params.id); // Extract user ID from request parameters
 
       // validate ObjectId
       if (!ObjectId.isValid(id)) {
