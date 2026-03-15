@@ -66,20 +66,22 @@ const RoleBasedEmail = z.union([
 ]).transform(data => data.email);
 
 
-// CREATE: strict schema for user creation
-
-export const createUserSchema = z.object({
+// Base object schema (no refinements) — used for partial updates
+const baseUserSchema = z.object({
      name: PersonName,
      phone: IrishPhoneNumber,
-     email: z.string().email(), 
-     dob: z.coerce.date(), 
+     email: z.string().email(),
+     dob: z.coerce.date(),
      role: z.enum(['student', 'staff', 'admin']),
      password: z.string()
        .min(8, { message: "Password must be at least 8 characters long" })
        .max(64, { message: "Password cannot exceed 64 characters" }),
      dateJoined: z.coerce.date().optional(),
      lastUpdated: z.coerce.date().optional()
-}).refine((data) => {
+});
+
+// CREATE: strict schema with role-based email refinement
+export const createUserSchema = baseUserSchema.refine((data) => {
     // Validate email based on role
     const emailValidation = RoleBasedEmail.safeParse({ role: data.role, email: data.email }); // safeParse to avoid throwing errors
     return emailValidation.success;
@@ -87,8 +89,8 @@ export const createUserSchema = z.object({
     message: "Email does not match the required format for the specified role"
 });
 
-// UPDATE: partial schema for user updates
-export const updateUserSchema = createUserSchema.partial();
+// UPDATE: partial schema — derived from base (before refinement) so .partial() works in Zod v4
+export const updateUserSchema = baseUserSchema.partial();
 
 
 
