@@ -7,7 +7,7 @@ import { sign as jwtSign } from 'jsonwebtoken';
 // Function to create JWT access token
 const createAccessToken = (user: User | null): string => {
   const secret = process.env.JWTSECRET || 'not very secret';
-  const expiresTime = '2m'; 
+  const expiresTime = '24h';
 
   const payload = {
     email: user?.email,
